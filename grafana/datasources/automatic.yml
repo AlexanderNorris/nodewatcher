@@ -6,6 +6,7 @@ datasources:
     type: mysql
     url: stats_db:3306
     user: stats
+    isDefault: true
     jsonData:
       database: stats
       maxOpenConns: 100 # Grafana v5.4+
