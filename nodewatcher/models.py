@@ -6,7 +6,7 @@ database = MySQLDatabase(
         "charset": "utf8",
         "sql_mode": "PIPES_AS_CONCAT",
         "use_unicode": True,
-        "host": "10.0.0.48",
+        "host": "stats_db",
         "user": "stats",
         "password": "password",
     }
