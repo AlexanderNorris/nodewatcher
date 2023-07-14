@@ -10,6 +10,8 @@ services:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 10s
       retries: 10
+    volumes:
+      - ./grafana:/etc/grafana/provisioning
 
   stats_db:
     image: mysql:5.6
@@ -32,3 +34,22 @@ services:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 10s
       retries: 10
+
+  redis:
+    image: redis:alpine
+  # celery:
+  #   build: ./nodewatcher
+  #   command: celery -A core worker -l info
+  #   volumes:
+  #     - ./nodewatcher/:/usr/src/app/
+  #   environment:
+  #     - BLOCKFROST_KEY=SET_ME
+  #   depends_on:
+  #     - redis
+  # celery-beat:
+  #   build: ./nodewatcher
+  #   command: celery -A core beat -l info
+  #   volumes:
+  #     - ./nodewatcher/:/usr/src/app/
+  #   depends_on:
+  #     - redis
