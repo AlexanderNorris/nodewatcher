@@ -75,7 +75,7 @@ CREATE TABLE
 
 CREATE TABLE
     `owner` (
-        `id` bigint AUTO_INCREMENT NULL PRIMARY KEY,
+        `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
         `owner_address` varchar(64) NULL,
         `pool_id` bigint NULL
     );
