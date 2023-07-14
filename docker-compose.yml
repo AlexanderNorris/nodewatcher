@@ -20,16 +20,8 @@ services:
       MYSQL_DATABASE: stats
       MYSQL_USER: stats
       MYSQL_PASSWORD: password
-    command:
-      [
-        mysqld,
-        --character-set-server=utf8mb4,
-        --collation-server=utf8mb4_unicode_ci,
-        --innodb_monitor_enable=all,
-        --max-connections=1001
-      ]
-    # volumes:
-    #   - ./mysql/init.sql:/data/application/init.sql
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d
     ports:
       - 3306:3306
     healthcheck:
