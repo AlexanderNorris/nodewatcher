@@ -37,12 +37,14 @@ services:
     command: celery -A nodewatcher worker -l info
     depends_on:
       - redis
+      - stats_db
 
   celery-beat:
     build: ./nodewatcher
     command: celery -A nodewatcher beat -l info
     depends_on:
       - redis
+      - stats_db
 
   flower:
     build: ./nodewatcher
