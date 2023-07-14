@@ -31,19 +31,30 @@ services:
 
   redis:
     image: redis:alpine
-  # celery:
-  #   build: ./nodewatcher
-  #   command: celery -A core worker -l info
-  #   volumes:
-  #     - ./nodewatcher/:/usr/src/app/
-  #   environment:
-  #     - BLOCKFROST_KEY=SET_ME
-  #   depends_on:
-  #     - redis
-  # celery-beat:
-  #   build: ./nodewatcher
-  #   command: celery -A core beat -l info
-  #   volumes:
-  #     - ./nodewatcher/:/usr/src/app/
-  #   depends_on:
-  #     - redis
+
+  celery:
+    build: ./nodewatcher
+    command: celery -A nodewatcher worker -l info
+    depends_on:
+      - redis
+
+  celery-beat:
+    build: ./nodewatcher
+    command: celery -A nodewatcher beat -l info
+    depends_on:
+      - redis
+
+  flower:
+    build: ./nodewatcher
+    command: celery -A nodewatcher.app flower
+    volumes:
+      - ./nodewatcher:/data
+    working_dir: /data
+    ports:
+      - 5555:5555
+    environment:
+      CELERY_BROKER_URL: redis://redis
+      CELERY_RESULT_BACKEND: redis://redis
+    depends_on:
+      - celery
+      - redis
