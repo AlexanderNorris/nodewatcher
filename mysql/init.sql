@@ -30,23 +30,23 @@ CREATE TABLE
         `fixed_cost` varchar(64) NOT NULL,
         `pledge` varchar(64) NOT NULL,
         `reward_addr` varchar(64) NOT NULL,
-        `meta_url` varchar(2048) NOT NULL,
-        `meta_hash` varchar(64) NOT NULL,
+        `meta_url` varchar(2048) NULL,
+        `meta_hash` varchar(64) NULL,
         `meta_json_name` varchar(64) NOT NULL,
         `meta_json_ticker` varchar(24) NOT NULL,
         `meta_json_homepage` varchar(2048) NOT NULL,
         `meta_json_description` varchar(64) NOT NULL,
         `pool_status` varchar(10) NOT NULL,
         `retiring_epoch` integer NULL,
-        `op_cert` varchar(64) NOT NULL,
-        `op_cert_counter` integer NOT NULL,
-        `active_stake` varchar(64) NOT NULL,
-        `sigma` varchar(64) NOT NULL,
-        `block_count` integer NOT NULL,
-        `live_pledge` varchar(64) NOT NULL,
-        `live_stake` varchar(64) NOT NULL,
+        `op_cert` varchar(64) NULL,
+        `op_cert_counter` integer NULL,
+        `active_stake` varchar(64) NULL,
+        `sigma` varchar(64) NULL,
+        `block_count` integer NULL,
+        `live_pledge` varchar(64) NULL,
+        `live_stake` varchar(64) NULL,
         `live_delegators` integer NOT NULL,
-        `live_saturation` varchar(64) NOT NULL
+        `live_saturation` varchar(64) NULL
     );
 
 --
@@ -58,12 +58,12 @@ CREATE TABLE
 CREATE TABLE
     `relay` (
         `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
-        `dns` varchar(2048) NOT NULL,
-        `srv` varchar(2048) NOT NULL,
-        `ipv4` char(39) NOT NULL,
-        `ipv6` char(39) NOT NULL,
-        `port` integer NOT NULL,
-        `watcher_determined_state` varchar(64) NOT NULL,
+        `dns` varchar(2048) NULL,
+        `srv` varchar(2048) NULL,
+        `ipv4` char(39) NULL,
+        `ipv6` char(39) NULL,
+        `port` integer NULL,
+        `watcher_determined_state` varchar(64) NULL,
         `pool_id` bigint NOT NULL
     );
 
@@ -75,9 +75,9 @@ CREATE TABLE
 
 CREATE TABLE
     `owner` (
-        `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
-        `owner_address` varchar(64) NOT NULL,
-        `pool_id` bigint NOT NULL
+        `id` bigint AUTO_INCREMENT NULL PRIMARY KEY,
+        `owner_address` varchar(64) NULL,
+        `pool_id` bigint NULL
     );
 
 ALTER TABLE `relay`
