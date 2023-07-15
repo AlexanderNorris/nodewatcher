@@ -4,14 +4,7 @@
 
 --
 
-CREATE TABLE
-    `metric` (
-        `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
-        `tcp_state` bool NOT NULL,
-        `tcp_latency` integer NULL,
-        `handshake_latency` integer NULL,
-        `clock` datetime(6) NOT NULL
-    );
+ALTER DATABASE stats CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 --
 
@@ -80,6 +73,23 @@ CREATE TABLE
         `pool_id` bigint NULL
     );
 
+--
+
+-- Create model Metric
+
+--
+
+CREATE TABLE
+    `metric` (
+        `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
+        `tcp_state` bool NOT NULL,
+        `tcp_latency` integer NULL,
+        `handshake_latency` integer NULL,
+        `clock` datetime(6) NOT NULL,
+        `relay_id` bigint NOT NULL,
+        `pool_id` bigint NOT NULL
+    );
+
 ALTER TABLE `relay`
 ADD
     CONSTRAINT `relay_pool_id_5251263b_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`id`);
@@ -87,3 +97,11 @@ ADD
 ALTER TABLE `owner`
 ADD
     CONSTRAINT `owner_pool_id_4d62e5f9_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`id`);
+
+ALTER TABLE `metric`
+ADD
+    CONSTRAINT `metric_relay_id_fk_relay_id` FOREIGN KEY (`relay_id`) REFERENCES `relay` (`id`);
+
+ALTER TABLE `metric`
+ADD
+    CONSTRAINT `metric_pool_id_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`id`);
