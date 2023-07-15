@@ -18,6 +18,35 @@ def determine_host(relay: Relay):
     return host
 
 
+@app.task()
+def measure(host: str, port: int, relay_id: int, pool_id: int):
+    """
+    Determine metrics and write to database
+    """
+    tcp_latency = measure_latency(host=host, port=port)
+    if tcp_latency:
+        # TCP port open
+        state = True
+        node = Node(host, port)
+        start = time.time()
+        node.handshake()
+        handshake_latency = time.time() - start
+        tcp_latency_val = tcp_latency[0]
+    else:
+        # TCP port closed
+        state = False
+        tcp_latency_val = None
+        handshake_latency = None
+    Metric.create(
+        tcp_state=state,
+        tcp_latency=tcp_latency_val,
+        handshake_latency=handshake_latency,
+        relay_id=relay_id,
+        pool_id=pool_id,
+    )
+    return
+
+
 @app.task(name="gather_metrics")
 def gather_metrics():
     """
@@ -29,18 +58,12 @@ def gather_metrics():
     for relay in all_relays:
         host = determine_host(relay)
         port = relay.port
-        tcp_latency = measure_latency(host=host, port=port)
-        if tcp_latency:
-            state = True
-            node = Node(host, port)
-            start = time.time()
-            node.handshake()
-            handshake_latency = time.time() - start
-        else:
-            handshake_latency = None
-        Metric(
-            tcp_state=state,
-            tcp_latency=tcp_latency,
-            handshake_latency=handshake_latency,
+        measure.apply_async(
+            kwargs={
+                "host": host,
+                "port": port,
+                "relay_id": relay.id,
+                "pool_id": relay.pool_id,
+            }
         )
     return
