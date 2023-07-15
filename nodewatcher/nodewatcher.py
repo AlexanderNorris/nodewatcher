@@ -14,7 +14,8 @@ CELERY_RESULT_BACKEND = "redis://redis:6379/1"
 CELERY_BEAT_SCHEDULE = {
     "nodewatcher": {
         "task": "update_pools",
-        "schedule": 3600,
+        "schedule": 300,  # Testing every 120 seconds
+        # "schedule": crontab(minute=0, hour=0), # Discovery runs nightly at midnight
     },
 }
 

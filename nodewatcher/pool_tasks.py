@@ -51,11 +51,16 @@ def update_pools():
             "https://api.koios.rest/api/v0/pool_info",
             json={"_pool_bech32_ids": [bech]},
         ).json()
+        # Slow down the sleep queries
+        sleep(1)
         # Form object to push into database
         for response in responses:
-            ticker = response.get("meta_json", {}).get("ticker")
-            logger.info(f"Writing to database {ticker}")
+            # Koios API sometimes returns a None response e.g. for WAV13
+            if not response:
+                continue
             try:
+                ticker = response.get("meta_json", {}).get("ticker")
+                logger.info(f"Writing to database {ticker}")
                 pool = Pool.get_or_create(
                     pool_id_bech32=response.get("pool_id_bech32"),
                     pool_id_hex=response.get("pool_id_hex"),
@@ -83,7 +88,6 @@ def update_pools():
                     live_saturation=response.get("live_saturation"),
                 )
                 # Rate limiting sigh
-                sleep(1)
                 if isinstance(pool, tuple):
                     pool = pool[0]
                 for relay in response.get("relays", []):
