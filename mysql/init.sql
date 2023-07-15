@@ -8,8 +8,8 @@ CREATE TABLE
     `metric` (
         `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
         `tcp_state` bool NOT NULL,
-        `tcp_latency` integer NOT NULL,
-        `handshake_latency` integer NOT NULL,
+        `tcp_latency` integer NULL,
+        `handshake_latency` integer NULL,
         `clock` datetime(6) NOT NULL
     );
 
