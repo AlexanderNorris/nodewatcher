@@ -1,5 +1,7 @@
 amqp==5.1.1
 billiard==3.6.4.0
+bitstring>=3.1.7
+cbor2>=5.2.0
 celery==5.1.2
 certifi==2023.5.7
 cffi==1.15.1
@@ -21,6 +23,7 @@ PyMySQL==1.1.0
 pytz==2023.3
 redis==3.5.3
 requests==2.31.0
+tcp-latency==0.0.12
 tornado==6.3.2
 urllib3==2.0.3
 vine==5.0.0
