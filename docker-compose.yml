@@ -35,16 +35,10 @@ services:
   celery:
     build: ./nodewatcher
     command: celery -A nodewatcher worker -l info
-    depends_on:
-      - redis
-      - stats_db
 
   celery-beat:
     build: ./nodewatcher
     command: celery -A nodewatcher beat -l info
-    depends_on:
-      - redis
-      - stats_db
 
   flower:
     build: ./nodewatcher
@@ -57,6 +51,3 @@ services:
     environment:
       CELERY_BROKER_URL: redis://redis
       CELERY_RESULT_BACKEND: redis://redis
-    depends_on:
-      - celery
-      - redis
