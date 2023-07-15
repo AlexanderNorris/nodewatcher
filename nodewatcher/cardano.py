@@ -37,7 +37,6 @@ import logging
 import socket
 import bitstring
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 network_magic = 764824073
 LAST_BYRON_BLOCKS = [
     [
@@ -72,7 +71,7 @@ class Node:
 
     def __del__(self):
         # Breakdown the socket
-        logging.info("Closing socket down")
+        logging.debug("Closing socket down")
         self.socket.close()
 
     def pack_u32(self, n):
@@ -97,7 +96,7 @@ class Node:
         return cbor2.loads(data)
 
     def endpoint_connect(self, host, port):
-        logging.info("Opening a TCP connection to %s:%d" % (host, port))
+        logging.debug("Opening a TCP connection to %s:%d" % (host, port))
         # Open a socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, port))
@@ -123,7 +122,7 @@ class Node:
         # Obtain Mode and Mini Protocol Version
         mode_mini_protcol = self.convert_bits(resp[4:6])
         # Build headers dictionary
-        logging.info(len(resp))
+        logging.debug(len(resp))
         headers["length"] = int(resp[6:].hex(), 16)
         headers["timestamp"] = (
             str(self.unpack_u32(resp[:4]))[:4]
@@ -200,11 +199,11 @@ class Node:
         protocol_id = 0
         msg = self.add_headers(obj, protocol_id)
         # STATE: PROPOSE
-        logging.info(">>> Version Proposal: " + str(obj))
+        logging.debug(">>> Version Proposal: " + str(obj))
         logging.debug(">>> Version Proposal: " + str(msg))
         self.socket.send(msg)
         data = self.node_response()
-        logging.info("<<< Version: " + str(data))
+        logging.debug("<<< Version: " + str(data))
         return
 
     def find_intersect(self, points: list = []):
@@ -221,11 +220,11 @@ class Node:
         protocol_id = 2
         msg = self.add_headers(obj, protocol_id)
         # STATE: msgFindIntersect
-        logging.info(">>> Intersection Request: " + str(obj))
+        logging.debug(">>> Intersection Request: " + str(obj))
         logging.debug(">>> Intersection Request: " + str(msg))
         self.socket.send(msg)
         data = self.node_response()
-        logging.info("<<< Intersection: " + str(data))
+        logging.debug("<<< Intersection: " + str(data))
         return data
 
     def msg_request_next(self):
@@ -236,18 +235,18 @@ class Node:
         protocol_id = 2
         obj = [0]
         msg = self.add_headers(obj, protocol_id)
-        logging.info(">>> Requesting next: " + str(obj))
+        logging.debug(">>> Requesting next: " + str(obj))
         logging.debug(">>> Requesting next: " + str(msg))
         self.socket.send(msg)
         data = self.node_response()
         if data[0] == 1:
-            logging.info("<<< MsgAwaitReply: " + str(data))
+            logging.debug("<<< MsgAwaitReply: " + str(data))
         elif data[0] == 2:
-            logging.info("<<< MsgRollForward: " + str(data))
+            logging.debug("<<< MsgRollForward: " + str(data))
         elif data[0] == 3:
-            logging.info("<<< MsgRollBackward: " + str(data))
+            logging.debug("<<< MsgRollBackward: " + str(data))
         elif data[0] == 7:
-            logging.info("<<< MsgDone: Chain-sync complete!")
+            logging.debug("<<< MsgDone: Chain-sync complete!")
         return data
 
     def save_block(self, block):
