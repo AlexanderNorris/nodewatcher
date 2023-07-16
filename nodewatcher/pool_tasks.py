@@ -125,7 +125,7 @@ def update_pools():
     return all_pools
 
 
-@signals.worker_ready.connect
+@signals.celeryd_init.connect(sender="nodewatcher-worker1-1")
 def initiate_pools(**kwargs):
     logger.info(
         "Worker ready, sleeping 60 seconds to allow database to come up prior to initial population"

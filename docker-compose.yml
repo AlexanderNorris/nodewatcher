@@ -32,9 +32,21 @@ services:
   redis:
     image: redis:alpine
 
-  celery:
+  worker1:
     build: ./nodewatcher
-    command: celery -A nodewatcher worker -l info
+    command: celery -A nodewatcher worker -l info -n worker1
+
+  worker2:
+    build: ./nodewatcher
+    command: celery -A nodewatcher worker -l info -n worker2
+
+  worker3:
+    build: ./nodewatcher
+    command: celery -A nodewatcher worker -l info -n worker3
+
+  worker4:
+    build: ./nodewatcher
+    command: celery -A nodewatcher worker -l info -n worker4
 
   celery-beat:
     build: ./nodewatcher
