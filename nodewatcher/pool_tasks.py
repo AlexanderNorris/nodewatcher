@@ -5,6 +5,7 @@ from nodewatcher import app
 from time import sleep
 from typing import Dict, List, Generator
 from celery import signals
+from time import sleep
 
 logger = get_task_logger(__name__)
 
@@ -25,21 +26,22 @@ def write_pool(response: Dict):
     """
     Write to database
     """
-
+    bech_32 = response.get("pool_id_bech32")
     if response.get("meta_json"):
         ticker = response.get("meta_json", {}).get("ticker")
         name = response.get("meta_json", {}).get("name")
         homepage = response.get("meta_json", {}).get("homepage")
         logger.info(f"Writing to database {ticker}")
     else:
-        bech_32 = response.get("pool_id_bech32")
         ticker = None
         name = None
         homepage = None
         logger.info(f"Writing to database for pool, no ticker {bech_32}")
     try:
-        pool = Pool.get_or_create(
-            pool_id_bech32=response.get("pool_id_bech32"),
+        """ """
+        # Upsert the pool by pool_id_bech32
+        Pool.replace(
+            pool_id_bech32=bech_32,
             pool_id_hex=response.get("pool_id_hex"),
             active_epoch_no=response.get("active_epoch_no"),
             vrf_key_hash=response.get("vrf_key_hash"),
@@ -63,20 +65,21 @@ def write_pool(response: Dict):
             live_stake=response.get("live_stake"),
             live_delegators=response.get("live_delegators"),
             live_saturation=response.get("live_saturation"),
-        )
-        if isinstance(pool, tuple):
-            pool = pool[0]
+        ).execute()
+        # Clean out and recreate relays
+        Relay.delete().where(Relay.pool_id == bech_32).execute()
         for relay in response.get("relays", []):
-            Relay.get_or_create(
+            print(f"Creating relay: {relay}")
+            Relay.create(
                 dns=relay.get("dns"),
                 srv=relay.get("srv"),
                 ipv4=relay.get("ipv4"),
                 ipv6=relay.get("ipv6"),
                 port=relay.get("port"),
-                pool_id=pool.id,
+                pool_id=bech_32,
             )
     except Exception as e:
-        logger.exception(e)
+        print(e)
     return
 
 
@@ -97,6 +100,7 @@ def get_all_pools() -> List[Dict]:
             pagination_incomplete = False
         offset += 1000
         logger.debug(f"New offset: {offset}")
+        sleep(1)
     return all_pools
 
 
@@ -125,11 +129,13 @@ def update_pools():
     return all_pools
 
 
-@signals.celeryd_init.connect(sender="nodewatcher-worker1-1")
+@signals.celeryd_init.connect
 def initiate_pools(**kwargs):
-    logger.info(
+    print(
         "Worker ready, sleeping 60 seconds to allow database to come up prior to initial population"
     )
     sleep(60)
+    print("Done sleeping, gathering relays")
     update_pools()
+    print("Completed pool updates")
     return
