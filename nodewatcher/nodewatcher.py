@@ -18,10 +18,11 @@ CELERY_BEAT_SCHEDULE = {
         # Add random offset of 1 hour here to reduce spike against Koios API
         "schedule": crontab(minute=0, hour=0),
     },
-    "metric-gathering": {"task": "gather_metrics", "schedule": 300},
+    "metric-gathering": {"task": "gather_metrics", "schedule": 600},
 }
 
 app = Celery(include=["pool_tasks", "relay_tasks"])
 app.conf.broker_url = CELERY_BROKER_URL
 app.conf.result_backend = CELERY_RESULT_BACKEND
 app.conf.beat_schedule = CELERY_BEAT_SCHEDULE
+app.autodiscover_tasks()
