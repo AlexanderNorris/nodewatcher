@@ -99,6 +99,7 @@ class Node:
         logging.debug("Opening a TCP connection to %s:%d" % (host, port))
         # Open a socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
         sock.connect((host, port))
         return sock
 
