@@ -14,8 +14,7 @@ ALTER DATABASE stats CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 CREATE TABLE
     `pool` (
-        `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
-        `pool_id_bech32` varchar(64) NOT NULL UNIQUE,
+        `pool_id_bech32` varchar(64) NOT NULL UNIQUE PRIMARY KEY,
         `pool_id_hex` varchar(64) NOT NULL UNIQUE,
         `active_epoch_no` integer NOT NULL,
         `vrf_key_hash` varchar(64) NOT NULL,
@@ -57,7 +56,7 @@ CREATE TABLE
         `ipv6` char(39) NULL,
         `port` integer NULL,
         `watcher_determined_state` varchar(64) NULL,
-        `pool_id` bigint NOT NULL
+        `pool_id` varchar(64) NOT NULL
     );
 
 --
@@ -70,7 +69,7 @@ CREATE TABLE
     `owner` (
         `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
         `owner_address` varchar(64) NULL,
-        `pool_id` bigint NULL
+        `pool_id` varchar(64) NULL
     );
 
 --
@@ -81,22 +80,21 @@ CREATE TABLE
 
 CREATE TABLE
     `metric` (
-        `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
         `tcp_state` bool NOT NULL,
         `tcp_latency` integer NULL,
         `handshake_latency` integer NULL,
         `clock` datetime(6) NOT NULL,
         `relay_id` bigint NOT NULL,
-        `pool_id` bigint NOT NULL
+        `pool_id` varchar(64) NOT NULL
     );
 
 ALTER TABLE `relay`
 ADD
-    CONSTRAINT `relay_pool_id_5251263b_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`id`);
+    CONSTRAINT `relay_pool_id_5251263b_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`pool_id_bech32`);
 
 ALTER TABLE `owner`
 ADD
-    CONSTRAINT `owner_pool_id_4d62e5f9_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`id`);
+    CONSTRAINT `owner_pool_id_4d62e5f9_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`pool_id_bech32`);
 
 ALTER TABLE `metric`
 ADD
@@ -104,4 +102,4 @@ ADD
 
 ALTER TABLE `metric`
 ADD
-    CONSTRAINT `metric_pool_id_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`id`);
+    CONSTRAINT `metric_pool_id_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`pool_id_bech32`);
