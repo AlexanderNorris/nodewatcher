@@ -32,19 +32,25 @@ services:
   redis:
     image: redis:alpine
 
-  celery:
+  worker1:
     build: ./nodewatcher
-    command: celery -A nodewatcher worker -l info
-    depends_on:
-      - redis
-      - stats_db
+    command: celery -A nodewatcher worker -l info -n worker1 -O fair --concurrency=50
+
+  worker2:
+    build: ./nodewatcher
+    command: celery -A nodewatcher worker -l info -n worker2 -O fair --concurrency=50
+
+  worker3:
+    build: ./nodewatcher
+    command: celery -A nodewatcher worker -l info -n worker3 -O fair --concurrency=50
+
+  worker4:
+    build: ./nodewatcher
+    command: celery -A nodewatcher worker -l info -n worker4 -O fair --concurrency=50
 
   celery-beat:
     build: ./nodewatcher
     command: celery -A nodewatcher beat -l info
-    depends_on:
-      - redis
-      - stats_db
 
   flower:
     build: ./nodewatcher
@@ -57,6 +63,3 @@ services:
     environment:
       CELERY_BROKER_URL: redis://redis
       CELERY_RESULT_BACKEND: redis://redis
-    depends_on:
-      - celery
-      - redis

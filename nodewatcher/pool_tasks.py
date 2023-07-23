@@ -1,19 +1,20 @@
-from celery import Celery, shared_task
-from celery.schedules import crontab
 from models import Pool, Relay
 import requests
 from celery.utils.log import get_task_logger
 from nodewatcher import app
+from time import sleep
+from typing import Dict, List, Generator
+from celery import signals
 from time import sleep
 
 logger = get_task_logger(__name__)
 
 session = requests.Session()
 session.headers = {"User-Agent": "NodeWatcher Release 0.1"}
-POOL_SIZE_QUERY = 100
+POOL_SIZE_QUERY = 1000
 
 
-def divide_chunks(l: list, n: int):
+def divide_chunks(l: List[Dict], n: int) -> Generator[List[Dict], None, None]:
     """
     Limit size of requests
     """
@@ -21,12 +22,71 @@ def divide_chunks(l: list, n: int):
         yield l[i : i + n]
 
 
-@app.task(name="update_pools")
-def update_pools():
+def write_pool(response: Dict):
     """
-    Obtain all pools
+    Write to database
     """
-    # initial query for
+    bech_32 = response.get("pool_id_bech32")
+    if response.get("meta_json"):
+        ticker = response.get("meta_json", {}).get("ticker")
+        name = response.get("meta_json", {}).get("name")
+        homepage = response.get("meta_json", {}).get("homepage")
+        logger.info(f"Writing to database {ticker}")
+    else:
+        ticker = None
+        name = None
+        homepage = None
+        logger.info(f"Writing to database for pool, no ticker {bech_32}")
+    try:
+        """ """
+        # Upsert the pool by pool_id_bech32
+        Pool.replace(
+            pool_id_bech32=bech_32,
+            pool_id_hex=response.get("pool_id_hex"),
+            active_epoch_no=response.get("active_epoch_no"),
+            vrf_key_hash=response.get("vrf_key_hash"),
+            margin=response.get("margin"),
+            fixed_cost=response.get("fixed_cost"),
+            pledge=response.get("pledge"),
+            reward_addr=response.get("reward_addr"),
+            # meta_url=response.get("owners"),  # This will be a relationship
+            # meta_hash=response.get("relays"), # This will be a relationship
+            meta_json_name=name,
+            meta_json_ticker=ticker,
+            meta_json_homepage=homepage,
+            pool_status=response.get("pool_status"),
+            retiring_epoch=response.get("retiring_epoch"),
+            op_cert=response.get("op_cert"),
+            op_cert_counter=response.get("op_cert_counter"),
+            active_stake=response.get("active_stake"),
+            sigma=response.get("sigma"),
+            block_count=response.get("block_count"),
+            live_pledge=response.get("live_pledge"),
+            live_stake=response.get("live_stake"),
+            live_delegators=response.get("live_delegators"),
+            live_saturation=response.get("live_saturation"),
+        ).execute()
+        # Clean out and recreate relays
+        Relay.delete().where(Relay.pool_id == bech_32).execute()
+        for relay in response.get("relays", []):
+            print(f"Creating relay: {relay}")
+            Relay.create(
+                dns=relay.get("dns"),
+                srv=relay.get("srv"),
+                ipv4=relay.get("ipv4"),
+                ipv6=relay.get("ipv6"),
+                port=relay.get("port"),
+                pool_id=bech_32,
+            )
+    except Exception as e:
+        print(e)
+    return
+
+
+def get_all_pools() -> List[Dict]:
+    """
+    Fetch all stake pools
+    """
     all_pools = []
     pagination_incomplete = True
     offset = 0
@@ -40,65 +100,42 @@ def update_pools():
             pagination_incomplete = False
         offset += 1000
         logger.debug(f"New offset: {offset}")
+        sleep(1)
+    return all_pools
+
+
+@app.task(name="update_pools")
+def update_pools():
+    """
+    Obtain all pools
+    """
+    all_pools = get_all_pools()
     logger.info(f"Gathered {len(all_pools)} total live pools")
     # Begin gathering all pool details and writing to database
     bechs_only = [pool["pool_id_bech32"] for pool in all_pools]
     logger.info(f"Gathering data for pools in chunks of: {POOL_SIZE_QUERY}")
-    for bech in divide_chunks(bechs_only, POOL_SIZE_QUERY):
+    for bech_group in divide_chunks(bechs_only, POOL_SIZE_QUERY):
         # Optimise this to run bulk bech fetches (not all)
         # Keep memory efficient
         responses = session.post(
             "https://api.koios.rest/api/v0/pool_info",
-            json={"_pool_bech32_ids": [bech]},
+            json={"_pool_bech32_ids": [bech_group]},
         ).json()
-        # Slow down the sleep queries
-        sleep(1)
+        # Slow down the HTTP queries to Koios
+        sleep(0.1)
         # Form object to push into database
         for response in responses:
-            # Koios API sometimes returns a None response e.g. for WAV13
-            if not response:
-                continue
-            try:
-                ticker = response.get("meta_json", {}).get("ticker")
-                logger.info(f"Writing to database {ticker}")
-                pool = Pool.get_or_create(
-                    pool_id_bech32=response.get("pool_id_bech32"),
-                    pool_id_hex=response.get("pool_id_hex"),
-                    active_epoch_no=response.get("active_epoch_no"),
-                    vrf_key_hash=response.get("vrf_key_hash"),
-                    margin=response.get("margin"),
-                    fixed_cost=response.get("fixed_cost"),
-                    pledge=response.get("pledge"),
-                    reward_addr=response.get("reward_addr"),
-                    # meta_url=response.get("owners"),  # This will be a relationship
-                    # meta_hash=response.get("relays"), # This will be a relationship
-                    meta_json_name=response.get("meta_json", {}).get("name"),
-                    meta_json_ticker=response.get("meta_json", {}).get("ticker"),
-                    meta_json_homepage=response.get("meta_json", {}).get("homepage"),
-                    pool_status=response.get("pool_status"),
-                    retiring_epoch=response.get("retiring_epoch"),
-                    op_cert=response.get("op_cert"),
-                    op_cert_counter=response.get("op_cert_counter"),
-                    active_stake=response.get("active_stake"),
-                    sigma=response.get("sigma"),
-                    block_count=response.get("block_count"),
-                    live_pledge=response.get("live_pledge"),
-                    live_stake=response.get("live_stake"),
-                    live_delegators=response.get("live_delegators"),
-                    live_saturation=response.get("live_saturation"),
-                )
-                # Rate limiting sigh
-                if isinstance(pool, tuple):
-                    pool = pool[0]
-                for relay in response.get("relays", []):
-                    Relay.get_or_create(
-                        dns=relay.get("dns"),
-                        srv=relay.get("srv"),
-                        ipv4=relay.get("ipv4"),
-                        ipv6=relay.get("ipv6"),
-                        port=relay.get("port"),
-                        pool_id=pool.id,
-                    )
-            except Exception as e:
-                logger.exception(e)
+            write_pool(response)
     return all_pools
+
+
+@signals.celeryd_init.connect
+def initiate_pools(**kwargs):
+    print(
+        "Worker ready, sleeping 60 seconds to allow database to come up prior to initial population"
+    )
+    sleep(60)
+    print("Done sleeping, gathering relays")
+    update_pools()
+    print("Completed pool updates")
+    return

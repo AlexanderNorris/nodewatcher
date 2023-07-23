@@ -4,14 +4,7 @@
 
 --
 
-CREATE TABLE
-    `metric` (
-        `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
-        `tcp_state` bool NOT NULL,
-        `tcp_latency` integer NOT NULL,
-        `handshake_latency` integer NOT NULL,
-        `clock` datetime(6) NOT NULL
-    );
+ALTER DATABASE stats CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 --
 
@@ -21,21 +14,20 @@ CREATE TABLE
 
 CREATE TABLE
     `pool` (
-        `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
-        `pool_id_bech32` varchar(64) NOT NULL UNIQUE,
+        `pool_id_bech32` varchar(64) NOT NULL UNIQUE PRIMARY KEY,
         `pool_id_hex` varchar(64) NOT NULL UNIQUE,
         `active_epoch_no` integer NOT NULL,
-        `vrf_key_hash` varchar(64) NOT NULL UNIQUE,
+        `vrf_key_hash` varchar(64) NOT NULL,
         `margin` integer NOT NULL,
         `fixed_cost` varchar(64) NOT NULL,
         `pledge` varchar(64) NOT NULL,
         `reward_addr` varchar(64) NOT NULL,
         `meta_url` varchar(2048) NULL,
         `meta_hash` varchar(64) NULL,
-        `meta_json_name` varchar(64) NOT NULL,
-        `meta_json_ticker` varchar(24) NOT NULL,
-        `meta_json_homepage` varchar(2048) NOT NULL,
-        `meta_json_description` varchar(64) NOT NULL,
+        `meta_json_name` varchar(64) NULL,
+        `meta_json_ticker` varchar(24) NULL,
+        `meta_json_homepage` varchar(2048) NULL,
+        `meta_json_description` varchar(64) NULL,
         `pool_status` varchar(10) NOT NULL,
         `retiring_epoch` integer NULL,
         `op_cert` varchar(64) NULL,
@@ -64,7 +56,7 @@ CREATE TABLE
         `ipv6` char(39) NULL,
         `port` integer NULL,
         `watcher_determined_state` varchar(64) NULL,
-        `pool_id` bigint NOT NULL
+        `pool_id` varchar(64) NOT NULL
     );
 
 --
@@ -77,13 +69,37 @@ CREATE TABLE
     `owner` (
         `id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY,
         `owner_address` varchar(64) NULL,
-        `pool_id` bigint NULL
+        `pool_id` varchar(64) NULL
+    );
+
+--
+
+-- Create model Metric
+
+--
+
+CREATE TABLE
+    `metric` (
+        `tcp_state` bool NOT NULL,
+        `tcp_latency` integer NULL,
+        `handshake_latency` integer NULL,
+        `clock` datetime(6) NOT NULL,
+        `relay_id` bigint NOT NULL,
+        `pool_id` varchar(64) NOT NULL
     );
 
 ALTER TABLE `relay`
 ADD
-    CONSTRAINT `relay_pool_id_5251263b_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`id`);
+    CONSTRAINT `relay_pool_id_5251263b_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`pool_id_bech32`);
 
 ALTER TABLE `owner`
 ADD
-    CONSTRAINT `owner_pool_id_4d62e5f9_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`id`);
+    CONSTRAINT `owner_pool_id_4d62e5f9_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`pool_id_bech32`);
+
+ALTER TABLE `metric`
+ADD
+    CONSTRAINT `metric_relay_id_fk_relay_id` FOREIGN KEY (`relay_id`) REFERENCES `relay` (`id`);
+
+ALTER TABLE `metric`
+ADD
+    CONSTRAINT `metric_pool_id_fk_pool_id` FOREIGN KEY (`pool_id`) REFERENCES `pool` (`pool_id_bech32`);

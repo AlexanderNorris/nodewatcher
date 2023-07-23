@@ -1,4 +1,5 @@
 from peewee import *
+import datetime
 
 database = MySQLDatabase(
     "stats",
@@ -21,17 +22,6 @@ class UnknownField(object):
 class BaseModel(Model):
     class Meta:
         database = database
-
-
-class Metric(BaseModel):
-    clock = DateTimeField()
-    handshake_latency = IntegerField()
-    id = BigAutoField()
-    tcp_latency = IntegerField()
-    tcp_state = IntegerField()
-
-    class Meta:
-        table_name = "metric"
 
 
 class Pool(BaseModel):
@@ -87,3 +77,16 @@ class Relay(BaseModel):
 
     class Meta:
         table_name = "relay"
+
+
+class Metric(BaseModel):
+    clock = DateTimeField(default=datetime.datetime.now)
+    handshake_latency = IntegerField()
+    id = BigAutoField()
+    tcp_latency = IntegerField()
+    tcp_state = IntegerField()
+    relay = ForeignKeyField(column_name="relay_id", field="id", model=Relay)
+    pool = ForeignKeyField(column_name="pool_id", field="id", model=Pool)
+
+    class Meta:
+        table_name = "metric"
