@@ -13,53 +13,29 @@ services:
     volumes:
       - ./grafana:/etc/grafana/provisioning
 
-  stats_db:
-    image: mysql:8.0.33
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: stats
-      MYSQL_USER: stats
-      MYSQL_PASSWORD: password
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
     volumes:
-      - ./mysql:/docker-entrypoint-initdb.d
+      - ./prometheus/config:/etc/prometheus/
+      - /var/tmp/prometheus/data:/prometheus
     ports:
-      - 3306:3306
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      timeout: 10s
-      retries: 10
+      - 9090:9090
 
-  redis:
-    image: redis:alpine
-
-  worker1:
-    build: ./nodewatcher
-    command: celery -A nodewatcher worker -l info -n worker1 -O fair --concurrency=50
-
-  worker2:
-    build: ./nodewatcher
-    command: celery -A nodewatcher worker -l info -n worker2 -O fair --concurrency=50
-
-  worker3:
-    build: ./nodewatcher
-    command: celery -A nodewatcher worker -l info -n worker3 -O fair --concurrency=50
-
-  worker4:
-    build: ./nodewatcher
-    command: celery -A nodewatcher worker -l info -n worker4 -O fair --concurrency=50
-
-  celery-beat:
-    build: ./nodewatcher
-    command: celery -A nodewatcher beat -l info
-
-  flower:
-    build: ./nodewatcher
-    command: celery -A nodewatcher.app flower
+  blackbox:
+    container_name: blackbox-exporter
+    image: prom/blackbox-exporter:latest
     volumes:
-      - ./nodewatcher:/data
-    working_dir: /data
+      - ./blackbox-exporter:/config
     ports:
-      - 5555:5555
-    environment:
-      CELERY_BROKER_URL: redis://redis
-      CELERY_RESULT_BACKEND: redis://redis
+      - 9115:9115
+
+  nodewatcher:
+    container_name: nodewatcher
+    build: ./nodewatcher
+    command: flask run --host=0.0.0.0 --debug
+    volumes:
+      - ./nodewatcher:/nodewatcher
+    working_dir: /nodewatcher
+    ports:
+      - 5000:5000

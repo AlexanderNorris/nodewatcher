@@ -1,0 +1,77 @@
+# my global config
+global:
+  scrape_interval: 3600s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  # evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  scrape_timeout: 3600s
+
+# Alertmanager configuration
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  - job_name: "prometheus"
+
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "insecure_ssh"
+    http_sd_configs:
+      - url: http://nodewatcher:5000/
+        refresh_interval: 600s
+    metrics_path: /probe
+    params:
+      module: [ssh_banner]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+        regex: '([^:]+)(:[0-9]+)?'
+        replacement: '${1}:22'
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: 'icmp'
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    http_sd_configs:
+      - url: http://nodewatcher:5000/
+        refresh_interval: 600s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+        regex: '([^:]+)(:[0-9]+)?'
+        replacement: '${1}'
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115  # This is your blackbox exporter.
+
+
+  - job_name: 'blackbox-tcp'
+    scrape_interval: 600s
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]  # Look for TCP response
+    http_sd_configs:
+      - url: http://nodewatcher:5000/
+        refresh_interval: 600s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

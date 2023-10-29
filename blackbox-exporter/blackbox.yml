@@ -1,0 +1,18 @@
+modules:
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: ip4
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      ttl: 5
+      preferred_ip_protocol: ip4
+  ssh_banner:
+    prober: tcp
+    tcp:
+      query_response:
+      - expect: "^SSH-2.0-"
+      - send: "SSH-2.0-blackbox-ssh-check"
