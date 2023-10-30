@@ -1,10 +1,7 @@
 from flask import Flask
 from typing import Dict, List, Generator
 import logging
-import aiohttp
-import asyncio
 import requests
-from time import sleep
 
 logging.basicConfig(level=logging.INFO)
 POOL_SIZE_QUERY = 250
@@ -14,7 +11,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def get_targets():
-    result = asyncio.run(get_all_targets())
+    result = get_all_targets()
     return result
 
 
@@ -64,20 +61,6 @@ def get_all_pools(session: requests.Session) -> List[Dict]:
     return all_pools
 
 
-async def get_pool_data_async(session, bech_group: list):
-    try:
-        async with session.post(
-            "https://api.koios.rest/api/v1/pool_info",
-            json={"_pool_bech32_ids": bech_group},
-        ) as response:
-            thing = await response.json()
-            return thing
-    except Exception as e:
-        # print(e)
-        print(response)
-    return
-
-
 def get_pool_data(session, bech_group: list):
     try:
         response = session.post(
@@ -93,7 +76,7 @@ def get_pool_data(session, bech_group: list):
     return []
 
 
-async def get_all_targets():
+def get_all_targets():
     """
     Obtain all pools
     """

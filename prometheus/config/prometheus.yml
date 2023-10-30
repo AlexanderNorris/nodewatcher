@@ -1,8 +1,8 @@
 # my global config
 global:
-  scrape_interval: 3600s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  scrape_interval: 600s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
   # evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
-  scrape_timeout: 3600s
+  scrape_timeout: 600s
 
 # Alertmanager configuration
 # alerting:
@@ -28,7 +28,7 @@ scrape_configs:
   - job_name: "insecure_ssh"
     http_sd_configs:
       - url: http://nodewatcher:5000/
-        refresh_interval: 600s
+        refresh_interval: 3600s
     metrics_path: /probe
     params:
       module: [ssh_banner]
@@ -48,7 +48,7 @@ scrape_configs:
       module: [icmp]
     http_sd_configs:
       - url: http://nodewatcher:5000/
-        refresh_interval: 600s
+        refresh_interval: 3600s
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -61,13 +61,13 @@ scrape_configs:
 
 
   - job_name: 'blackbox-tcp'
-    scrape_interval: 600s
+    scrape_interval: 300s
     metrics_path: /probe
     params:
       module: [tcp_connect]  # Look for TCP response
     http_sd_configs:
       - url: http://nodewatcher:5000/
-        refresh_interval: 600s
+        refresh_interval: 3600s
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
