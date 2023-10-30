@@ -1,4 +1,4 @@
-# nodewatcher
+# Node Watcher 👀
 Watches the live nodes on the Cardano Blockchain
 
 ## Project Goals
