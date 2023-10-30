@@ -4,7 +4,8 @@ import logging
 import requests
 
 logging.basicConfig(level=logging.INFO)
-POOL_SIZE_QUERY = 250
+LIVE_POOL_QUERY = 1000
+POOL_DETAIL_SIZE_QUERY = 100
 
 app = Flask(__name__)
 
@@ -48,15 +49,18 @@ def get_all_pools(session: requests.Session) -> List[Dict]:
     session.headers = {"User-Agent": "NodeWatcher Release 0.2"}
     while pagination_incomplete:
         response = session.get(
-            "https://api.koios.rest/api/v1/pool_list?pool_status=eq.registered",
-            params={"offset": str(offset)},
+            "https://api.koios.rest/api/v1/pool_list",
+            params={
+                "offset": str(offset),
+                "pool_status": "eq.registered",
+                "order": "pool_id_bech32.desc",
+            },
         ).json()
-
         all_pools += response
         logging.debug(f"Length of the response: {len(response)}")
-        if len(response) < 1000:
+        if len(response) < LIVE_POOL_QUERY:
             pagination_incomplete = False
-        offset += 1000
+        offset += LIVE_POOL_QUERY
     logging.info(f"All pools count: {len(all_pools)}")
     return all_pools
 
@@ -89,7 +93,7 @@ def get_all_targets():
     bechs_only = [pool["pool_id_bech32"] for pool in all_pools]
     logging.info(f"Gathered {len(all_pools)} total live pools")
 
-    for bech_group in divide_chunks(bechs_only, POOL_SIZE_QUERY):
+    for bech_group in divide_chunks(bechs_only, POOL_DETAIL_SIZE_QUERY):
         logging.info(f"Fetching pool data for {len(bech_group)} pools")
         # Optimise this to run bulk bech fetches (not all)
         # Keep memory efficient
@@ -114,8 +118,5 @@ def get_all_targets():
                     "labels": {"ticker": pool_ref, "bech": pool_bech},
                 }
             )
-        # except AttributeError as e:
-        #     logging.error("This pool doesn't have a valid ticker or pool_id_bech32")
-        #     logging.error(result)
     logging.info(f"Problems with a total of: {count} pools")
     return targets
